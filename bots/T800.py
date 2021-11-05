@@ -4,7 +4,7 @@ from typing import Sequence
 from bots.BotInterface import BotInterface
 from environment.Constants import Action, HandType, Stage
 from environment.Observation import Observation
-from utils.handValue import getBoardHandType, getHandPercent, getHandType
+from utils.handValue import getBoardHandType, getHandPercent, getHandType, getLongestStraight
 
 # your bot class, rename to match the file name
 class T800(BotInterface):
@@ -36,7 +36,7 @@ class T800(BotInterface):
         handType, cards = getHandType(observation.myHand)
         # if my hand is top 20 percent: raise
         
-        if handPercent < .20:
+        if handPercent < .30:
             return Action.RAISE
         # if my hand is top 60 percent: call
         elif handPercent < .70:
@@ -48,17 +48,22 @@ class T800(BotInterface):
         # get my hand's percent value (how good is the best 5 card hand i can make out of all possible 5 card hands)
         handPercent, cards = getHandPercent(
             observation.myHand, observation.boardCards)
-        handType, handCards = getHandType(observation.myHand, observation.boardCards)
-        boardType, boardCards = getHandType(observation.myHand, observation.boardCards)
-        if handType == boardType:
-            return Action.FOLD
+        handType = getHandType(observation.myHand)
+        handBoardType = getHandType(observation.myHand, observation.boardCards)
+
         # if my hand is top 30 percent: raise
-        if handPercent <= .20 and handType:
+        if handPercent <= .30 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .35:
+        elif handPercent <= .60:
             return Action.CALL
         # else fold
+        straight, _, _ = getLongestStraight(observation.myHand, observation.boardCards)
+        if straight == 4:
+            return Action.CALL
+        flush, _, _ = getLongestStraight(observation.myHand, observation.boardCards)
+        if flush == 4:
+            return Action.CALL
         return Action.FOLD
 
     def handleTurn(self, observation: Observation) -> Action:
@@ -69,12 +74,18 @@ class T800(BotInterface):
         handType = getHandType(observation.myHand)
         handBoardType = getHandType(observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if self.opponentNotRaise(observation) and handPercent <= .20 and handType != handBoardType:
+        if handPercent <= .35 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .50:
+        elif handPercent <= .80 and handType:
             return Action.CALL
         # else fold
+        straight, _, _ = getLongestStraight(observation.myHand, observation.boardCards)
+        if straight == 4:
+            return Action.CALL
+        flush, _, _ = getLongestStraight(observation.myHand, observation.boardCards)
+        if flush == 4:
+            return Action.CALL
         return Action.FOLD
 
     def handleRiver(self, observation: Observation) -> Action:
@@ -82,10 +93,12 @@ class T800(BotInterface):
         handPercent, cards = getHandPercent(
             observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if self.opponentNotRaise(observation) and handPercent <= .10:
+        handType = getHandType(observation.myHand)
+        handBoardType = getHandType(observation.myHand, observation.boardCards)
+        if handPercent <= .30 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif self.opponentNotDoubleRaise(observation) and handPercent <= .90:
+        elif handPercent <= .90 and handType != handBoardType:
             return Action.CALL
         # else fold
         return Action.FOLD
