@@ -24,16 +24,18 @@ class T800(BotInterface):
             opponent_actions_this_round) > 0 else None
         if stage == Stage.PREFLOP:
             return self.handlePreFlop(observation)
-
-        return self.handlePostFlop(observation)
+        if stage == Stage.FLOP:
+            return self.handlePostFlop(observation)
+        if stage == Stage.TURN:
+            return self.handleTurn(observation)
+        return self.handleRiver(observation)
 
     def handlePreFlop(self, observation: Observation) -> Action:
         # get my hand's percent value (how good is this 2 card hand out of all possible 2 card hands)
         handPercent, _ = getHandPercent(observation.myHand)
-        handType = getHandType(observation.myHand)
-        if handType == HandType.PAIR:
-            return Action.RAISE
+        handType, cards = getHandType(observation.myHand)
         # if my hand is top 20 percent: raise
+        
         if handPercent < .20:
             return Action.RAISE
         # if my hand is top 60 percent: call
@@ -46,11 +48,44 @@ class T800(BotInterface):
         # get my hand's percent value (how good is the best 5 card hand i can make out of all possible 5 card hands)
         handPercent, cards = getHandPercent(
             observation.myHand, observation.boardCards)
+        handType, handCards = getHandType(observation.myHand, observation.boardCards)
+        boardType, boardCards = getHandType(observation.myHand, observation.boardCards)
+        if handType == boardType:
+            return Action.FOLD
         # if my hand is top 30 percent: raise
-        if handPercent <= .25:
+        if handPercent <= .25 and handType:
+            return Action.RAISE
+        # if my hand is top 80 percent: call
+        elif handPercent <= .50:
+            return Action.CALL
+        # else fold
+        return Action.FOLD
+
+    def handleTurn(self, observation: Observation) -> Action:
+        # get my hand's percent value (how good is the best 5 card hand i can make out of all possible 5 card hands)
+        handPercent, cards = getHandPercent(
+            observation.myHand, observation.boardCards)
+        # if my hand is top 30 percent: raise
+        handType = getHandType(observation.myHand)
+        handBoardType = getHandType(observation.myHand, observation.boardCards)
+        # if my hand is top 30 percent: raise
+        if handPercent <= .20 and handType:
             return Action.RAISE
         # if my hand is top 80 percent: call
         elif handPercent <= .80:
+            return Action.CALL
+        # else fold
+        return Action.FOLD
+
+    def handleRiver(self, observation: Observation) -> Action:
+        # get my hand's percent value (how good is the best 5 card hand i can make out of all possible 5 card hands)
+        handPercent, cards = getHandPercent(
+            observation.myHand, observation.boardCards)
+        # if my hand is top 30 percent: raise
+        if handPercent <= .15:
+            return Action.RAISE
+        # if my hand is top 80 percent: call
+        elif handPercent <= .90:
             return Action.CALL
         # else fold
         return Action.FOLD
