@@ -17,6 +17,10 @@ class T800(BotInterface):
     def act(self, action_space: Sequence[Action], observation: Observation) -> Action:
         # use different strategy depending on pre or post flop (before or after community cards are delt)
         stage = observation.stage
+        opponent_actions_this_round = observation.get_opponent_history_current_stage()
+        # Get the last action the opponent have done
+        last_action = opponent_actions_this_round[-1] if len(
+            opponent_actions_this_round) > 0 else None
         if stage == Stage.PREFLOP:
             return self.handlePreFlop(observation)
 
@@ -29,7 +33,7 @@ class T800(BotInterface):
         if handPercent < .20:
             return Action.RAISE
         # if my hand is top 60 percent: call
-        elif handPercent < .60:
+        elif handPercent < .70:
             return Action.CALL
         # else fold
         return Action.FOLD
@@ -39,7 +43,7 @@ class T800(BotInterface):
         handPercent, cards = getHandPercent(
             observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if handPercent <= .30:
+        if handPercent <= .25:
             return Action.RAISE
         # if my hand is top 80 percent: call
         elif handPercent <= .80:
