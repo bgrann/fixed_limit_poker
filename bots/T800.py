@@ -2,9 +2,9 @@
 from typing import Sequence
 
 from bots.BotInterface import BotInterface
-from environment.Constants import Action, Stage
+from environment.Constants import Action, HandType, Stage
 from environment.Observation import Observation
-from utils.handValue import getHandPercent
+from utils.handValue import getBoardHandType, getHandPercent, getHandType
 
 # your bot class, rename to match the file name
 class T800(BotInterface):
@@ -19,6 +19,7 @@ class T800(BotInterface):
         stage = observation.stage
         opponent_actions_this_round = observation.get_opponent_history_current_stage()
         # Get the last action the opponent have done
+        
         last_action = opponent_actions_this_round[-1] if len(
             opponent_actions_this_round) > 0 else None
         if stage == Stage.PREFLOP:
@@ -29,6 +30,9 @@ class T800(BotInterface):
     def handlePreFlop(self, observation: Observation) -> Action:
         # get my hand's percent value (how good is this 2 card hand out of all possible 2 card hands)
         handPercent, _ = getHandPercent(observation.myHand)
+        handType = getHandType(observation.myHand)
+        if handType == HandType.PAIR:
+            return Action.RAISE
         # if my hand is top 20 percent: raise
         if handPercent < .20:
             return Action.RAISE
