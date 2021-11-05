@@ -53,10 +53,10 @@ class T800(BotInterface):
         if handType == boardType:
             return Action.FOLD
         # if my hand is top 30 percent: raise
-        if handPercent <= .25 and handType:
+        if handPercent <= .20 and handType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .50:
+        elif handPercent <= .35:
             return Action.CALL
         # else fold
         return Action.FOLD
@@ -69,10 +69,10 @@ class T800(BotInterface):
         handType = getHandType(observation.myHand)
         handBoardType = getHandType(observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if handPercent <= .20 and handType:
+        if self.opponentNotRaise(observation) and handPercent <= .20 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .80:
+        elif handPercent <= .50:
             return Action.CALL
         # else fold
         return Action.FOLD
@@ -82,10 +82,25 @@ class T800(BotInterface):
         handPercent, cards = getHandPercent(
             observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if handPercent <= .15:
+        if self.opponentNotRaise(observation) and handPercent <= .10:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .90:
+        elif self.opponentNotDoubleRaise(observation) and handPercent <= .90:
             return Action.CALL
         # else fold
         return Action.FOLD
+
+
+    def opponentNotRaise(self, observation: Observation) -> bool:
+        if observation.myPosition == 0:
+            opponent = 1
+        else: 
+            opponent = 0
+        return not observation.players[opponent].history[observation.stage-1] == Action.RAISE
+
+    def opponentNotDoubleRaise(self, observation: Observation) -> bool:
+        if observation.myPosition == 0:
+            opponent = 1
+        else: 
+            opponent = 0
+        return not observation.players[opponent].history[observation.stage-1] == Action.RAISE and observation.players[opponent].history[observation.stage-2] == Action.RAISE
