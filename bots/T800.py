@@ -19,7 +19,21 @@ class T800(BotInterface):
         stage = observation.stage
         opponent_actions_this_round = observation.get_opponent_history_current_stage()
         # Get the last action the opponent have done
-        
+        handType, handTypeCards = getHandType(
+            observation.myHand, observation.boardCards)
+        if handType in [HandType.STRAIGHTFLUSH,
+                        HandType.FOUROFAKIND,
+                        HandType.FULLHOUSE,
+                        HandType.FLUSH,
+                        HandType.STRAIGHT,
+                        HandType.THREEOFAKIND,
+                        HandType.TWOPAIR]:
+            return Action.RAISE
+        handPercent, cards = getHandPercent(
+            observation.myHand, observation.boardCards)
+
+        if handPercent > 0.9:
+            Action.FOLD
         last_action = opponent_actions_this_round[-1] if len(
             opponent_actions_this_round) > 0 else None
         if stage == Stage.PREFLOP:
@@ -36,7 +50,7 @@ class T800(BotInterface):
         handType, cards = getHandType(observation.myHand)
         # if my hand is top 20 percent: raise
         
-        if handPercent < .30:
+        if handPercent < .20:
             return Action.RAISE
         # if my hand is top 60 percent: call
         elif handPercent < .70:
@@ -101,6 +115,8 @@ class T800(BotInterface):
         elif handPercent <= .80 and handType != handBoardType:
             return Action.CALL
         # else fold
+        elif observation.totalPot > 300:
+            return Action.CALL
         return Action.FOLD
 
 
