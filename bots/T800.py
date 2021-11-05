@@ -74,10 +74,10 @@ class T800(BotInterface):
         handType = getHandType(observation.myHand)
         handBoardType = getHandType(observation.myHand, observation.boardCards)
         # if my hand is top 30 percent: raise
-        if handPercent <= .35 and handType != handBoardType:
+        if handPercent <= .30 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .80 and handType:
+        elif handPercent <= .80 and handType != handBoardType:
             return Action.CALL
         # else fold
         straight, _, _ = getLongestStraight(observation.myHand, observation.boardCards)
@@ -98,7 +98,7 @@ class T800(BotInterface):
         if handPercent <= .30 and handType != handBoardType:
             return Action.RAISE
         # if my hand is top 80 percent: call
-        elif handPercent <= .90 and handType != handBoardType:
+        elif handPercent <= .80 and handType != handBoardType:
             return Action.CALL
         # else fold
         return Action.FOLD
